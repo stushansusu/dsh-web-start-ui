@@ -1,0 +1,15 @@
+{
+  "id": "qinghua",
+  "kind": "video",
+  "name": {
+    "zh": "青花瓷 · 水墨",
+    "en": "Blue-and-White · Ink"
+  },
+  "note": {
+    "zh": "青花瓷水墨开场 · 12s",
+    "en": "Blue-and-white ink wash opener, 12s"
+  },
+  "file": "intro.mp4",
+  "poster": "poster.jpg",
+  "durationMs": 12280
+}

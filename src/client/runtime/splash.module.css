@@ -1,0 +1,66 @@
+/* Launch curtain styles. The curtain is a video; everything here is the frame
+   around it - the theme backdrop that shows while the video buffers, the stage,
+   the skip footnote and the two fades. Sized and coloured by theme attributes on
+   the curtain element, which the runtime keeps in sync with the shell theme. */
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+  --dsh-boot-ink: #16203a;
+  background: radial-gradient(120% 82% at 50% 46%, #ffffff 0%, #eef2fa 46%, #e2e8f5 100%);
+  animation: curtainIn 240ms ease-out both;
+}
+
+.curtain[data-theme='dark'] {
+  --dsh-boot-ink: #eaf2ff;
+  background: radial-gradient(120% 82% at 50% 46%, #0c1526 0%, #070c17 55%, #04070d 100%);
+}
+
+.videoStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: transparent;
+}
+
+.hint {
+  position: absolute;
+  bottom: 42px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  font-family: 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
+  font-size: 12.5px;
+  letter-spacing: 0.16em;
+  color: var(--dsh-boot-ink);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  animation: hintIn 600ms ease-out 900ms both;
+}
+
+.outro { animation: curtainOut var(--dsh-boot-outro) cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+@keyframes curtainIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes curtainOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.035); } }
+@keyframes hintIn { from { opacity: 0; } to { opacity: 0.55; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .curtain, .curtain * { animation-duration: 200ms !important; animation-iteration-count: 1 !important; }
+}

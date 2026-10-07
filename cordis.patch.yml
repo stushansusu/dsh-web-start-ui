@@ -1,0 +1,13 @@
+# dsh-web-start-ui bundle patch: inserts the startup-animation row into the
+# web profile roster. Applied as a profile bundle layer (the dsh.bundle.patch
+# manifest field); install with
+#   dsh plugin --profile <name> add link:<repo>/packages/dsh-web-start-ui
+#
+# The row is a bare plugin by package name: the node half (exports ".") runs in
+# the host process and has no behavior, and the dsh.client declaration in
+# package.json makes the browser half (exports "./client", served at
+# /plugins/ui-web-start-ui/client.js) load in the web GUI, where it paints
+# the launch curtain before the shell renders and registers its settings page.
+- insert:
+    - id: ui-web-start-ui
+      name: '@linxin666/dsh-web-start-ui'
