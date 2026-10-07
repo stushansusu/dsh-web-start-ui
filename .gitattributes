@@ -1,0 +1,9 @@
+# Normalize text to LF in the repository, and keep the binary assets binary.
+* text=auto eol=lf
+*.mp4 binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.ico binary
+*.svg text eol=lf
