@@ -3,7 +3,7 @@
 English | [中文](README.zh.md)
 
 <p align="center">
-  <img src="https://img.shields.io/npm/v/@linxin666/dsh-web-start-ui?style=flat-square" alt="Version">
+  <img src="https://github.com/stushansusu/dsh-web-start-ui/actions/workflows/ci.yml/badge.svg" alt="CI">
   &nbsp;
   <img src="https://img.shields.io/badge/DSH-%3E%3D0.2.0--rc.2-4c6ef5?style=flat-square&amp;labelColor=454a54" alt="DSH">
   &nbsp;
@@ -48,7 +48,7 @@ The selected id is **host state** (`<DSH_HOME>/launch-animations/state.json`), s
 
 **Selection.** A stored choice wins; with nothing stored (a fresh install, or an id whose skin was replaced) the **first built-in skin** plays. Choosing *No skin* stores an explicit null, so the fallback never overrides a choice. The asset route answers with an `ETag`, so a cached install revalidates with a 304 instead of re-downloading megabytes.
 
-**What ships today:** `assets/launch/qinghua` — 青花瓷 · 水墨 (Blue-and-White · Ink), 12.28 s, 2024×1080 HEVC, ~16 MB, with a poster frame.
+**What ships today:** `assets/launch/qinghua` — 青花瓷 · 水墨 (Blue-and-White · Ink), 12.28 s, 2024×1080 HEVC, ~16 MB, with a poster frame. That one file is most of the package download (see [Install](#install)) and about twice the size budget suggested below.
 
 > **Codec note.** That skin is HEVC (H.265), which browsers play through platform hardware decoding. Chrome's `canPlayType('video/mp4; codecs="hvc1"')` reports no support and yet plays it fine when the machine has the decoder (verified: metadata at 211 ms, full playback to 12.28 s). On a machine without HEVC decoding the video errors out, the safety timer lifts the curtain, and no animation appears. To reach every machine, add an H.264 skin instead — `node scripts/bake-skin-video.py <source> <out-dir> --width 1920 --crf 26 --tune animation` re-encodes to H.264 and pulls a poster frame.
 
@@ -81,18 +81,36 @@ This plugin is standalone **on purpose**: it is not part of the `@linxin666/dsh-
 
 ### 1. Install the package
 
+The package is **not on npm yet**, so it installs from the repository — which is
+exactly what the Workshop's one-click install runs for a registered entry that
+carries no `npm` field:
+
 ```sh
 # web profile
-dsh plugin --profile web add @linxin666/dsh-web-start-ui
+dsh plugin --profile web add https://github.com/stushansusu/dsh-web-start-ui
 
 # desktop client profile
-dsh plugin --profile desktop add @linxin666/dsh-web-start-ui
+dsh plugin --profile desktop add https://github.com/stushansusu/dsh-web-start-ui
 
-# or from a local checkout / the standalone repository, while developing it
+# or from a local checkout, while developing it
 dsh plugin --profile web add link:<path to this package>
 ```
 
-> Cloned the standalone repository instead? `lib/` is committed there, so the `link:` install above works as-is. After editing `src/`, run `pnpm install && pnpm run build` to refresh it.
+> **Install size: ~17 MB, 16 MB of it the shipped skin.** That is twice the size
+> budget suggested [above](#launch-skins). The video is downloaded once per
+> install and revalidated with a 304 on every later boot.
+>
+> **Nothing is built at install time.** `lib/` is committed and shipped as-is,
+> so the install needs no compiler, no network toolchain and no build approval —
+> which is the contract `scripts/check-package-contract.mjs` and CI pin down.
+>
+> Working on the plugin? A `src/` change still has to be followed by a rebuild
+> of `lib/`, and **that build is not standalone**: `tsdown.config.ts` imports
+> `shared/tsdown.client.ts` from the dsh-web monorepo. Rebuild in a checkout of
+> that monorepo with this package at `packages/dsh-web-start-ui`, copy `lib/`
+> back, then run `node scripts/lib-artifact-check.mjs --write`. CI fails when
+> `src/` moves without that fingerprint being refreshed. (`pnpm install` and
+> the typecheck/tests run fine here on their own.)
 
 ### 2. Restart the host
 

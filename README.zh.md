@@ -3,7 +3,7 @@
 [English](README.md) | 中文
 
 <p align="center">
-  <img src="https://img.shields.io/npm/v/@linxin666/dsh-web-start-ui?style=flat-square" alt="Version">
+  <img src="https://github.com/stushansusu/dsh-web-start-ui/actions/workflows/ci.yml/badge.svg" alt="CI">
   &nbsp;
   <img src="https://img.shields.io/badge/DSH-%3E%3D0.2.0--rc.2-4c6ef5?style=flat-square&amp;labelColor=454a54" alt="DSH">
   &nbsp;
@@ -48,7 +48,7 @@ DSH Web GUI / 桌面端插件：打开界面时先看到一段**启动视频**�
 
 **选中规则。** 有显式选择就听选择；什么都没存过（新装、或存的 id 对应的皮肤已被替换）则播**第一段内置皮肤**。选「不用皮肤」写入的是显式 null，所以这个兜底不会覆盖用户的选择。资产路由带 `ETag`，装过一次之后二次启动是 304，不会再下一遍几十兆。
 
-**当前内置：** `assets/launch/qinghua` —— 青花瓷 · 水墨，12.28s，2024×1080 HEVC，约 16 MB，带海报帧。
+**当前内置：** `assets/launch/qinghua` —— 青花瓷 · 水墨，12.28s，2024×1080 HEVC，约 16 MB，带海报帧。这一个文件就是整个包下载量的大头（见[安装](#安装)），也是下面「规格建议」里体积预算的两倍。
 
 > **编码提醒。** 这段皮肤是 HEVC（H.265），浏览器靠**平台硬件解码**播它。Chrome 的 `canPlayType('video/mp4; codecs="hvc1"')` 会报不支持，但只要机器有解码器就播得动（实测：元数据 211ms、整段播到 12.28s）。反过来，没有 HEVC 解码的机器上它会报错，兜底计时器落帘，等于没有动画。要覆盖所有机器就再加一段 H.264 皮肤：`node scripts/bake-skin-video.py <源视频> <输出目录> --width 1920 --crf 26 --tune animation` 会转成 H.264 并顺手抽一张海报帧。
 
@@ -81,18 +81,31 @@ DSH Web GUI / 桌面端插件：打开界面时先看到一段**启动视频**�
 
 ### 1 · 装包
 
+本包**还没发到 npm**，所以从仓库安装 —— 商店里没有 `npm` 字段的条目，一键安装跑的就是这条命令：
+
 ```sh
 # Web 档案
-dsh plugin --profile web add @linxin666/dsh-web-start-ui
+dsh plugin --profile web add https://github.com/stushansusu/dsh-web-start-ui
 
 # 桌面客户端档案
-dsh plugin --profile desktop add @linxin666/dsh-web-start-ui
+dsh plugin --profile desktop add https://github.com/stushansusu/dsh-web-start-ui
 
-# 或者本地 checkout / 独立仓库开发时
+# 或者本地 checkout 开发时
 dsh plugin --profile web add link:<本包目录>
 ```
 
-> 如果你是 clone 独立仓库：那里**已提交构建产物 `lib/`**，所以上面的 `link:` 装完即用；改过 `src/` 之后跑一次 `pnpm install && pnpm run build` 刷新即可。
+> **安装体积约 17 MB，其中 16 MB 是随包那段皮肤**（约为上面「规格建议」里体积预算的两倍）。
+> 视频每个安装只下一次，之后每次开机是 304 校验，不会重下。
+>
+> **安装时不需要构建。** `lib/` 已提交、按原样发布，整个安装过程不编译任何东西，
+> 不需要编译器、不需要装工具链，也不会被 pnpm 的构建脚本门控拦下 ——
+> 这条约定由 `scripts/check-package-contract.mjs` 与 CI 一起钉住。
+>
+> 要改插件？改完 `src/` 仍必须重新构建 `lib/`，而且**这个构建不能独立跑**：
+> `tsdown.config.ts` 里的 `shared/tsdown.client.ts` 只存在于 dsh-web 主仓。
+> 请在主仓里把本包放在 `packages/dsh-web-start-ui` 重建、把 `lib/` 拷回来，
+> 再跑 `node scripts/lib-artifact-check.mjs --write`；`src/` 动过而指纹没刷新时 CI 会红。
+> （`pnpm install` 与 typecheck / 测试在本仓可以独立跑。）
 
 ### 2 · 重启宿主
 

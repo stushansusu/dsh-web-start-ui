@@ -1,0 +1,51 @@
+name: CI
+
+# The Workshop installs this package straight from this repository, with no
+# build step on the user's machine (scripts/check-package-contract.mjs pins that
+# contract). Everything here runs on the committed artifacts, so a pull request
+# can be reviewed without cloning anything: the committed lib/ must match src/,
+# the declared manifest paths must exist, and src/ must typecheck and pass its
+# tests.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: contract · artifacts · typecheck · tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 11.7.0 is the version the DSH profiles install plugins with.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # No prepare script, on purpose: this install must not need a compiler.
+      - run: pnpm install --frozen-lockfile
+
+      # A git-hosted install runs no lifecycle script, every declared path exists,
+      # and the client bundle still hands off this package's module id.
+      - run: pnpm run check:package-contract
+
+      # lib/ is committed and shipped as-is; a src/ edit without a refreshed
+      # fingerprint fails here.
+      - run: pnpm run check:lib-artifacts
+
+      # The declarations are shipped too, and unlike the bundles they can be
+      # reproduced outside the monorepo, so check them exactly.
+      - run: pnpm run build:types
+      - run: git diff --exit-code -- lib/types
+
+      - run: pnpm run typecheck
+      - run: pnpm test

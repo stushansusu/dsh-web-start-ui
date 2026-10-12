@@ -1,7 +1,9 @@
 # dsh-web-start-ui bundle patch: inserts the startup-animation row into the
 # web profile roster. Applied as a profile bundle layer (the dsh.bundle.patch
 # manifest field); install with
-#   dsh plugin --profile <name> add link:<repo>/packages/dsh-web-start-ui
+#   dsh plugin --profile <name> add https://github.com/stushansusu/dsh-web-start-ui
+# (or link:<a local checkout> while developing). This repository ships lib/ and
+# has no prepare step, so a git install needs no build.
 #
 # The row is a bare plugin by package name: the node half (exports ".") runs in
 # the host process and has no behavior, and the dsh.client declaration in

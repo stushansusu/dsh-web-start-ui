@@ -69,16 +69,51 @@ DSH Web GUI plugin `@linxin666/dsh-web-start-ui`（显示名 dsh web start ui，
   或 `fs.unlinkSync`；同理，包目录被运行中的宿主/webview 占用时 `Move-Item` 会被拒（`intro.mp4` 就被占过），
   此时用「复制 + 回填 + 稍后清理」而不是硬改名。
 
-## 验收（本机）
+## 安装契约（商店一键安装，别打破）
+
+条目只带 `repo`（没有 `npm` 字段），商店的一键安装跑的是
+`dsh plugin --profile <profile> add <repo-url>`：pnpm 把仓库拉到**用户机器上**再打包，
+所以用户机器上能成立的东西只有仓库里已经有的东西。
+
+- **不许有安装期构建脚本**（`prepare` / `preinstall` / `install` / `postinstall`）。
+  2026-10-11 的两次安装失败就是 `prepare: tsdown` 造成的：先被 pnpm 11 的
+  `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED` 拦下，放行之后又倒在
+  `tsdown.config.ts` 的 `../../shared/tsdown.client.ts` —— 那条相对路径只在 dsh-web 主仓
+  `packages/` 布局下成立。**`lib/` 已经提交，本来就不需要再构建。**
+- **`lib/` 是发布产物，必须和 `src/` 一起动。** `scripts/lib-artifact-check.mjs` 记的是
+  `src/` 的指纹、不是产物字节：客户端包会把仓内相对路径焊进 CSS Module 类名哈希，
+  逐字节比对跨机器不成立（主仓 `scripts/lib-artifact-check.mjs` 出于同一个理由）。
+- 改过 `package.json` 的 `exports` / `main` / `icon` / `dsh.bundle.patch` 之后，跑
+  `node scripts/check-package-contract.mjs`：它检查「没有安装期脚本」「声明的路径都存在」
+  「`lib/client.js` 的模块 id 没变」「`dsh.client.platform` 仍是 web」。
+- CI（`.github/workflows/ci.yml`）跑上面两条 + typecheck + 测试，另加
+  `pnpm run build:types && git diff --exit-code -- lib/types`（d.ts 是本仓唯一能精确复现的产物）。
+
+## 验收（本仓可独立跑）
 
 ```sh
-node 'D:/dsh/dsh-web/node_modules/tsdown/dist/run.mjs'   # 在包目录里构建
-node 'node_modules/typescript/bin/tsc' --noEmit -p tsconfig.json
-node 'node_modules/vitest/vitest.mjs' run
+pnpm install --frozen-lockfile
+pnpm run check:package-contract
+pnpm run check:lib-artifacts
+pnpm run build:types && git diff --exit-code -- lib/types
+pnpm run typecheck
+pnpm test
 ```
 
-## 提交前检查
+## 重建 lib/（只能在主仓布局里做）
+
+要重建两个 bundle 时：把本包放进 dsh-web 主仓的 `packages/dsh-web-start-ui`
+（复制或 junction 都行，`packages/*` 在 workspace 里），然后
 
 ```sh
-pnpm --filter @linxin666/dsh-web-start-ui build
+pnpm install                                             # 主仓内
+pnpm --filter @linxin666/dsh-web-start-ui build           # tsdown + tsc -p tsconfig.build.json
+# 把产出的 lib/ 同步回本仓，再记指纹：
+node scripts/lib-artifact-check.mjs --write
 ```
+
+> 为什么不就地构建：`tsdown.config.ts` import 的是主仓的 `shared/tsdown.client.ts`，
+> 而这个 preset 按「仓内相对路径」生成 CSS Module 类名哈希 —— 包不在
+> `packages/dsh-web-start-ui` 这个位置时，产物和已提交的字节不一致。
+> 已核对（2026-10-12）：按上面的位置重建，`lib/index.js` / `lib/client.js` /
+> `lib/client.js.map` 与已提交版本逐字节相同。

@@ -1,0 +1,19 @@
+# pnpm settings for this single-package repository (pnpm scaffolds this file
+# when it meets ERR_PNPM_IGNORED_BUILDS; the values below are the real verdicts).
+#
+# pnpm 11 refuses to finish an install when a dependency carries build scripts
+# that are neither allowed nor explicitly refused, so every such package needs
+# an entry here.
+#
+# All five arrive through the @deepseek-ai/* devDependencies, which exist for the
+# typecheck and the tests only: this plugin declares no runtime dependencies, and
+# none of the five runs in a test (6/6 pass without them built). They are marked
+# false rather than left out so the install stays script-free, fast and
+# reproducible on a CI runner. The DSH profile that loads this package builds its
+# own copies.
+allowBuilds:
+  '@deepseek-ai/dsh-subprocess-local': false
+  '@google/genai': false
+  koffi: false
+  node-pty: false
+  protobufjs: false

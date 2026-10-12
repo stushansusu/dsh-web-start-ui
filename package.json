@@ -1,7 +1,7 @@
 {
   "name": "@linxin666/dsh-web-start-ui",
   "description": "Startup animation for the DSH Web GUI - a launch video (built-in skins shipped in the package, custom ones uploaded from the settings page) played full screen before the shell paints, with its own first-level settings section.",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "publishConfig": {
     "access": "public"
   },
@@ -38,11 +38,15 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
-    "prepare": "tsdown",
+    "build": "tsdown && tsc -p tsconfig.build.json",
+    "build:bundle": "tsdown",
+    "build:types": "tsc -p tsconfig.build.json",
     "watch": "tsdown --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:package-contract": "node scripts/check-package-contract.mjs",
+    "check:lib-artifacts": "node scripts/lib-artifact-check.mjs",
+    "check:lib-artifacts:write": "node scripts/lib-artifact-check.mjs --write"
   },
   "peerDependencies": {
     "react": "^18.2.0",
