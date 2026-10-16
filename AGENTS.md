@@ -44,9 +44,12 @@ DSH Web GUI plugin `@linxin666/dsh-web-start-ui`（显示名 dsh web start ui，
 - **选中规则**：`resolveActiveSkinId()` —— 存了 id 且皮肤存在就用它；什么都没存（新装 / id 失效）
   就播第一段内置皮肤；`{"active": null}` 是「显式不用皮肤」，兜底不会覆盖它。
   删除皮肤时如果它正被选中，走的是 `clearActiveSkin()`（回到内置默认），不是写成 null。
-- **当前内置皮肤是 HEVC**（`assets/launch/qinghua`，青花瓷，12.28s / 2024×1080 / ~16MB）。
-  浏览器靠平台硬件解码播它：Chrome 的 `canPlayType` 报不支持但本机实测能整段播完；
-  没有 HEVC 解码的机器会走兜底计时器、等于没有动画。要覆盖所有机器就补一段 H.264。
+- **当前内置两段皮肤**：`assets/launch/qinghua`（青花瓷，12.28s / 2024×1080 / HEVC / ~16MB）与
+  `assets/launch/whale-senren`（鲸鱼娘 · 千恋万花，12.25s / 2560×1440 / H.264 / ~44MB）。
+  HEVC 那段靠平台硬件解码播它：Chrome 的 `canPlayType` 报不支持但本机实测能整段播完，
+  没有 HEVC 解码的机器会走兜底计时器、等于没有动画；H.264 那段正好覆盖这种机器。
+  **兜底默认是 `resolveActiveSkinId()` 里的 `listBuiltinSkins()[0]`（id 排序第一段）**，
+  现在 `qinghua` 排在 `whale-senren` 前面所以默认没变 —— 以后加内置皮肤时留意 id 排序会把新的顶成默认。
 - 路由（`src/host/routes.ts`，前缀 `/api/boot-animation`）：列表 / 选择 / 上传 / 删除 / 资产（带单段 Range）。
   **写操作限 loopback**（桌面端 LAN 模式会 bind 0.0.0.0）；读走平台自身的浏览器鉴权。
   资产路由的允许清单就是 manifest 本身：只服务 manifest 里点名的文件，越权路径与陌生文件名一律 404；

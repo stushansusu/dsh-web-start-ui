@@ -1,0 +1,15 @@
+{
+  "id": "whale-senren",
+  "kind": "video",
+  "name": {
+    "zh": "鲸鱼娘 · 千恋万花",
+    "en": "Whale Girl · Senren"
+  },
+  "note": {
+    "zh": "鲸鱼娘·千恋万花开场 · 12.25s",
+    "en": "Whale Girl Senren opener, 12.25s"
+  },
+  "file": "intro.mp4",
+  "poster": "poster.jpg",
+  "durationMs": 12250
+}

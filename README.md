@@ -15,14 +15,14 @@ English | [中文](README.zh.md)
   <em>Launch video skins · On screen before the shell paints · Click or Esc to skip · Its own settings page</em>
 </p>
 
-An extension for the DSH Web GUI and desktop client: the page opens on a **launch video** instead of a cold, half-assembled shell, and the curtain lifts when the video ends. It ships one skin, accepts your own uploads, and adds one first-level settings page (Settings → Startup animation). No DSH source change, no third-party request.
+An extension for the DSH Web GUI and desktop client: the page opens on a **launch video** instead of a cold, half-assembled shell, and the curtain lifts when the video ends. It ships two skins, accepts your own uploads, and adds one first-level settings page (Settings → Startup animation). No DSH source change, no third-party request.
 
 ## What it does
 
 - **Playing before the GUI paints.** The host half contributes one inline script to the served index.html, so the video element exists and is fetching ~30 ms into navigation. Measured on a 0.2.0-rc.2 host with the shipped skin: element at 3 ms, metadata at 211 ms, playback at 622 ms, while the GUI's own first paint is at 191 ms — the animation is already covering it.
 - **Adopted, not restarted.** The browser half takes over that same `<video>` element, so the animation keeps its buffer and its `currentTime` instead of jumping back to the start.
 - **Lifts when the video ends** (and not before the shell has painted, bounded by a hold cap). A skin the browser cannot decode lifts on a safety timer instead: a broken video never becomes a wall in front of the GUI.
-- **Two sources of skins.** One is shipped in the package; more can be uploaded from the settings page and deleted there again. See [Launch skins](#launch-skins).
+- **Two sources of skins.** Two are shipped in the package; more can be uploaded from the settings page and deleted there again. See [Launch skins](#launch-skins).
 - **Skip on demand.** Click anywhere or press Escape to lift it immediately.
 - **Theme aware.** It follows the shell's light/dark preference, remembers it for the next boot's early backdrop, and honours `prefers-reduced-motion`.
 
@@ -48,9 +48,14 @@ The selected id is **host state** (`<DSH_HOME>/launch-animations/state.json`), s
 
 **Selection.** A stored choice wins; with nothing stored (a fresh install, or an id whose skin was replaced) the **first built-in skin** plays. Choosing *No skin* stores an explicit null, so the fallback never overrides a choice. The asset route answers with an `ETag`, so a cached install revalidates with a 304 instead of re-downloading megabytes.
 
-**What ships today:** `assets/launch/qinghua` — 青花瓷 · 水墨 (Blue-and-White · Ink), 12.28 s, 2024×1080 HEVC, ~16 MB, with a poster frame. That one file is most of the package download (see [Install](#install)) and about twice the size budget suggested below.
+**What ships today:** two skins, both with a poster frame.
 
-> **Codec note.** That skin is HEVC (H.265), which browsers play through platform hardware decoding. Chrome's `canPlayType('video/mp4; codecs="hvc1"')` reports no support and yet plays it fine when the machine has the decoder (verified: metadata at 211 ms, full playback to 12.28 s). On a machine without HEVC decoding the video errors out, the safety timer lifts the curtain, and no animation appears. To reach every machine, add an H.264 skin instead — `node scripts/bake-skin-video.py <source> <out-dir> --width 1920 --crf 26 --tune animation` re-encodes to H.264 and pulls a poster frame.
+- `assets/launch/qinghua` — 青花瓷 · 水墨 (Blue-and-White · Ink), 12.28 s, 2024×1080 HEVC, ~16 MB.
+- `assets/launch/whale-senren` — 鲸鱼娘 · 千恋万花 (Whale Girl · Senren), 12.25 s, 2560×1440 H.264, ~44 MB.
+
+Together they are most of the package download (see [Install](#install)) and well past the size budget suggested below.
+
+> **Codec note.** `qinghua` is HEVC (H.265), which browsers play through platform hardware decoding. Chrome's `canPlayType('video/mp4; codecs="hvc1"')` reports no support and yet plays it fine when the machine has the decoder (verified: metadata at 211 ms, full playback to 12.28 s). On a machine without HEVC decoding the video errors out, the safety timer lifts the curtain, and no animation appears. To reach every machine, `whale-senren` ships as an H.264 skin — `node scripts/bake-skin-video.py <source> <out-dir> --width 1920 --crf 26 --tune animation` re-encodes a new one to H.264 and pulls a poster frame. The default is still the first built-in in id order (`qinghua`), so on a machine without HEVC decoding pick `whale-senren` from the settings page.
 
 **Suggested spec** for a new skin — it is fetched on first use and played on every boot, so it is the one asset that can make the GUI *slower* to appear:
 
@@ -69,7 +74,7 @@ Custom skins are deleted from the settings page; built-ins cannot be (they are p
 | Control | Values | Notes |
 | --- | --- | --- |
 | Enabled | on / off | Off boots straight to the interface — and skips the early backdrop with it. |
-| Launch skin | No skin · the built-in skin · every uploaded one | The video that opens DSH; upload and delete custom skins from the same page. |
+| Launch skin | No skin · every built-in skin · every uploaded one | The video that opens DSH; upload and delete custom skins from the same page. |
 | Replay | Once per session · Every load | `session` writes a sessionStorage marker. |
 | Click to skip | on / off | Escape always lifts the curtain. |
 | Preview | button | Plays the selected skin once, right now. |
@@ -96,9 +101,10 @@ dsh plugin --profile desktop add https://github.com/stushansusu/dsh-web-start-ui
 dsh plugin --profile web add link:<path to this package>
 ```
 
-> **Install size: ~17 MB, 16 MB of it the shipped skin.** That is twice the size
-> budget suggested [above](#launch-skins). The video is downloaded once per
-> install and revalidated with a 304 on every later boot.
+> **Install size: ~61 MB, ~60 MB of it the two shipped skins.** That is well past
+> the size budget suggested [above](#launch-skins). Each video is downloaded once
+> per install and revalidated with a 304 on every later boot; a given boot fetches
+> only the selected skin's video.
 >
 > **Nothing is built at install time.** `lib/` is committed and shipped as-is,
 > so the install needs no compiler, no network toolchain and no build approval —
@@ -118,7 +124,7 @@ Quit and reopen the desktop app, or restart `dsh web`. A plugin's host half is l
 
 ### 3. Open the settings page
 
-**Settings → 启动动画 / Startup animation.** The shipped skin (青花瓷 · 水墨) is selected by default; press **预览动画 / Preview** to watch it right there, or pick another skin.
+**Settings → 启动动画 / Startup animation.** The default skin (青花瓷 · 水墨 — the first built-in in id order) is selected; press **预览动画 / Preview** to watch it right there, or pick 鲸鱼娘 · 千恋万花, the H.264 one.
 
 ### Day to day
 
