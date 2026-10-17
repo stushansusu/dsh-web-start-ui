@@ -57,6 +57,14 @@ DSH Web GUI plugin `@linxin666/dsh-web-start-ui`（显示名 dsh web start ui，
 - **路由注册时机**：`apply()` 里先试一次（`ctx.get('webServer')`），再挂 `ctx.on('internal/service')`
   等 `webServer` 出现，最后才靠首次 index 注入兜底。**别只留注入那条** —— 缓存过的 index 或一次
   API 探测会在第一次页面渲染之前打进来，只靠它会 404。
+- **两件资产级硬约束**（第一条 CI 上有闸：`pnpm run check:launch-assets`）：
+  ① mp4 的 `moov` 必须在 `mdat` **之前**（faststart）。moov 在尾部时，浏览器必须先取回文件尾才解得出一帧，
+     冷缓存首次开机实测多等 ~0.6s，而这段等待里帘幕一直停在海报上（0.4.6 两段内置皮肤都是尾部 moov）。
+     修法无损：`python scripts/mp4-faststart.py <file.mp4>`（只搬 moov 并修 stco/co64，mdat 一字节不动）；
+     `bake-skin-video.py` 本身带 `+faststart`，用它转码出来的不会有这个问题。
+  ② 海报帧**必须是视频的第一帧**。海报是「首帧解出来之前」帘幕显示的画面，用末帧会让开机先看到结尾那张图、
+     再跳回开头（0.4.6 的 whale-senren 就是这个坑：海报取自末帧）。抽帧只用
+     `bake-skin-video.py --poster-at 0`（默认 0），别用别的工具另抽 —— 这条只能靠人，CI 里没有解码器只能查 ①。
 - 规格：H.264 mp4、1920×1080、无音轨、几秒就够、≤8MB（视频每次开机都要下/播，越大开机越慢）。
   上传上限 `CUSTOM_SKIN_MAX_BYTES` = 256MB。
 - **类型边界**：宿主半区用 node API，所以本包 `tsconfig.json` 是 `"types": ["node"]` 且 devDependency
@@ -98,6 +106,7 @@ DSH Web GUI plugin `@linxin666/dsh-web-start-ui`（显示名 dsh web start ui，
 pnpm install --frozen-lockfile
 pnpm run check:package-contract
 pnpm run check:lib-artifacts
+pnpm run check:launch-assets
 pnpm run build:types && git diff --exit-code -- lib/types
 pnpm run typecheck
 pnpm test

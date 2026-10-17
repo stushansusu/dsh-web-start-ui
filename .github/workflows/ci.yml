@@ -42,6 +42,11 @@ jobs:
       # fingerprint fails here.
       - run: pnpm run check:lib-artifacts
 
+      # Every shipped launch skin must put moov before mdat: with moov last a
+      # cold first boot fetches the tail before it can decode a frame, and the
+      # curtain sits on its poster for that whole time.
+      - run: pnpm run check:launch-assets
+
       # The declarations are shipped too, and unlike the bundles they can be
       # reproduced outside the monorepo, so check them exactly.
       - run: pnpm run build:types

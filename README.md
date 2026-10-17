@@ -51,7 +51,7 @@ The selected id is **host state** (`<DSH_HOME>/launch-animations/state.json`), s
 **What ships today:** two skins, both with a poster frame.
 
 - `assets/launch/qinghua` — 青花瓷 · 水墨 (Blue-and-White · Ink), 12.28 s, 2024×1080 HEVC, ~16 MB.
-- `assets/launch/whale-senren` — 鲸鱼娘 · 千恋万花 (Whale Girl · Senren), 12.25 s, 2560×1440 H.264, ~44 MB.
+- `assets/launch/whale-senren` — 鲸鱼娘 · 千恋万花 (Whale Girl · Senren), 12.25 s, 2560×1440 H.264, ~44 MB. Its poster is frame 0, which is black (the clip fades in from black), so the curtain never opens on the ending frame.
 
 Together they are most of the package download (see [Install](#install)) and well past the size budget suggested below.
 
@@ -65,7 +65,11 @@ Together they are most of the package download (see [Install](#install)) and wel
 | Picture | 1920×1080, no audio track |
 | Length | a few seconds is plenty; the curtain waits for the whole video |
 | Size | under 8 MB |
+| moov | before `mdat` (faststart) — `scripts/bake-skin-video.py` writes it that way, `scripts/mp4-faststart.py` repairs an existing file losslessly |
+| First frame | the poster frame is taken from it, and the curtain starts on it |
 | Last frame | the curtain fades out of it, so end on a calm frame |
+
+**Two asset rules that only bite on a cold first boot.** (1) `moov` must come *before* `mdat`: a player cannot decode a frame until it has read `moov`, so with `moov` last the browser has to fetch the end of the file first. Measured on this package, that delayed the first painted frame by ~0.6 s — and the curtain sat on its poster for that whole time. `scripts/bake-skin-video.py` writes faststart; `python scripts/mp4-faststart.py <file.mp4>` repairs an existing file losslessly (it moves `moov` and bumps the chunk offsets it carries — the media bytes are untouched). (2) The poster must be the video's **first** frame, not a prettier one from later in the clip: it is what the curtain shows until the first decoded frame arrives, so a poster taken from the end makes the boot open on the last image and then snap back to the start. Take it with `--poster-at 0`. `pnpm run check:launch-assets` gates rule 1 in CI; rule 2 needs a video decoder, so it stays on the author.
 
 Custom skins are deleted from the settings page; built-ins cannot be (they are package files).
 
